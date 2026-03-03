@@ -1,0 +1,11 @@
+
+
+{
+ "appId": "com.aether.vpn",
+ "appName": "AetherVPN",
+ "webDir": ".",
+ "bundledWebRuntime": false,
+ "server": {
+  "androidScheme": "https"
+ }
+}
