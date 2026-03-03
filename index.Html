@@ -1,0 +1,284 @@
+
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Aether VPN</title>
+  <style>
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --accent: #007aff; /* Синий Apple */
+      --accent-glow: rgba(0, 122, 255, 0.3);
+      --text-main: #ffffff;
+      --text-sec: #8e8e93;
+      --success: #34c759;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow: hidden; /* Запрещаем скролл всего окна */
+      height: 100vh;
+    }
+
+    /* Контейнер для экранов */
+    .app-container {
+      height: calc(100vh - 70px); /* Минус высота таббара */
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .page {
+      display: none;
+      padding: 20px;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .page.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ТАББАР (Нижнее меню) */
+    .tab-bar {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      height: 70px;
+      background: rgba(28, 28, 30, 0.8);
+      backdrop-filter: blur(20px);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      border-top: 0.5px solid #38383a;
+    }
+
+    .tab-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: var(--text-sec);
+      font-size: 10px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .tab-item.active { color: var(--accent); }
+    .tab-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
+
+    /* ГЛАВНЫЙ ЭКРАН */
+    .status-header { text-align: center; margin-top: 40px; }
+    .status-text { font-size: 14px; color: var(--text-sec); text-transform: uppercase; letter-spacing: 1px; }
+    .status-text.active { color: var(--success); }
+
+    .main-button-wrap {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 60px 0;
+    }
+
+    .power-btn {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      background: var(--card);
+      border: 6px solid #2c2c2e;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 0 0 0 var(--accent-glow);
+    }
+
+    .power-btn.on {
+      border-color: var(--accent);
+      box-shadow: 0 0 50px 15px var(--accent-glow);
+      transform: scale(1.05);
+    }
+
+    .power-btn svg { width: 90px; height: 90px; fill: #2c2c2e; transition: 0.3s; }
+    .power-btn.on svg { fill: var(--accent); }
+
+    /* СПИСОК СЕРВЕРОВ */
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      border: 1px solid transparent;
+    }
+    .card.selected { border-color: var(--accent); }
+    .flag { font-size: 24px; }
+    .server-name { font-weight: 600; flex-grow: 1; }
+    .ping { color: var(--success); font-size: 12px; }
+
+    /* СТАТИСТИКА */
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+    .stat-box { background: var(--card); padding: 20px; border-radius: 20px; text-align: center; }
+    .stat-val { font-size: 22px; font-weight: 800; display: block; margin-bottom: 5px; }
+    .stat-label { color: var(--text-sec); font-size: 12px; }
+
+    </style>
+    </head>
+    <body>
+
+    <div class="app-container">
+    <!-- Page 1: Home -->
+    <div id="home" class="page active">
+    <div class="status-header">
+      <div class="status-text" id="statusLabel">VPN Отключен</div>
+      <h1 id="timer">00:00:00</h1>
+    </div>
+
+    <div class="main-button-wrap">
+      <div class="power-btn" id="vpnBtn" onclick="toggleVPN()">
+        <svg viewBox="0 0 24 24"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42C17.99 7.86 19 9.81 19 12c0 3.87-3.13 7-7 7s-7-3.13-7-7c0-2.19 1.01-4.14 2.58-5.42L6.17 5.17C4.23 6.82 3 9.26 3 12c0 4.97 4.03 9 9 9s9-4.03 9-9c0-2.74-1.23-5.18-3.17-6.83z"/></svg>
+      </div>
+    </div>
+
+    <div class="card" onclick="showPage('servers')">
+      <div class="flag" id="currentFlag">🇳🇱</div>
+      <div class="server-name" id="currentServer">Netherlands, Amsterdam</div>
+      <div class="ping">45ms</div>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="#8e8e93"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+    </div>
+    </div>
+
+    <!-- Page 2: Servers -->
+    <div id="servers" class="page">
+    <h2>Выберите сервер</h2>
+    <div class="card selected" onclick="selectServer('🇳🇱', 'Netherlands', '45ms')">
+      <div class="flag">🇳🇱</div>
+      <div class="server-name">Netherlands (Амстердам)</div>
+      <div class="ping">45ms</div>
+    </div>
+    <div class="card" onclick="selectServer('🇩🇪', 'Germany', '52ms')">
+      <div class="flag">🇩🇪</div>
+      <div class="server-name">Germany (Франкфурт)</div>
+      <div class="ping">52ms</div>
+    </div>
+    <div class="card" onclick="selectServer('🇺🇸', 'USA', '120ms')">
+      <div class="flag">🇺🇸</div>
+      <div class="server-name">USA (Нью-Йорк)</div>
+      <div class="ping">120ms</div>
+    </div>
+    </div>
+
+    <!-- Page 3: Stats -->
+    <div id="stats" class="page">
+    <h2>Ваша статистика</h2>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <span class="stat-val">1.2 GB</span>
+        <span class="stat-label">Загружено</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-val">450 MB</span>
+        <span class="stat-label">Отправлено</span>
+      </div>
+    </div>
+    <div class="card" style="margin-top: 20px;">
+      <div class="server-name">Тип протокола</div>
+      <div class="ping" style="color: var(--accent)">VLESS + Reality</div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="tab-bar">
+    <div class="tab-item active" onclick="showPage('home', this)">
+    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    Главная
+    </div>
+    <div class="tab-item" onclick="showPage('servers', this)">
+    <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    Серверы
+    </div>
+    <div class="tab-item" onclick="showPage('stats', this)">
+    <svg viewBox="0 0 24 24"><path d="M10 20h4V4h-4v16zm-6 0h4v-8H4v8zM16 9v11h4V9h-4z"/></svg>
+    Статистика
+    </div>
+    </nav>
+
+    <script>
+    let isConnected = false;
+    let timerInterval;
+    let seconds = 0;
+
+    function showPage(pageId, el) {
+    // Переключение видимости
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(pageId).classList.add('active');
+
+    // Подсветка иконки в таббаре
+    if(el) {
+      document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'));
+      el.classList.add('active');
+    }
+    }
+
+    function toggleVPN() {
+    isConnected = !isConnected;
+      const btn = document.getElementById('vpnBtn');
+      const label = document.getElementById('statusLabel');
+
+      if(isConnected) {
+        btn.classList.add('on');
+        label.innerText = 'VPN Подключен';
+        label.classList.add('active');
+        startTimer();
+        // Здесь будет вызов Capacitor для реального подключения
+      } else {
+        btn.classList.remove('on');
+        label.innerText = 'VPN Отключен';
+        label.classList.remove('active');
+        stopTimer();
+      }
+      }
+
+      function selectServer(flag, name, ping) {
+      document.getElementById('currentFlag').innerText = flag;
+      document.getElementById('currentServer').innerText = name;
+      showPage('home');
+      // Обновляем иконки в таббаре
+      document.querySelectorAll('.tab-item')[0].classList.add('active');
+      document.querySelectorAll('.tab-item')[1].classList.remove('active');
+      }
+
+      function startTimer() {
+      seconds = 0;
+      timerInterval = setInterval(() => {
+        seconds++;
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+      }, 1000);
+      }
+
+      function stopTimer() {
+      clearInterval(timerInterval);
+      document.getElementById('timer').innerText = "00:00:00";
+      }
+      </script>
+
+      </body>
+      </html>
+
+      
