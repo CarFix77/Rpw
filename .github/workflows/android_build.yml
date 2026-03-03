@@ -1,0 +1,55 @@
+
+
+name: Android Release Build
+
+on:
+ push:
+  branches:
+   - main # Запускать сборку при каждом пуше в ветку main
+
+jobs:
+ build-android:
+  runs-on: ubuntu-latest
+
+  steps:
+   - name: Checkout Code
+    uses: actions/checkout@v4
+
+   - name: Setup Node.js
+    uses: actions/setup-node@v4
+    with:
+     node-version: '20' # Рекомендуемая версия Node.js
+
+   - name: Setup Java JDK
+    uses: actions/setup-java@v4
+    with:
+     distribution: 'temurin'
+     java-version: '17' # Рекомендуемая версия Java для Android
+
+   - name: Install Dependencies
+    run: npm install
+
+   - name: Add Android Platform (Capacitor)
+    run: npx @capacitor/cli add android
+
+   - name: Generate Keystore
+    run: |
+     echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+     echo "storeFile=release.keystore" > android/gradle.properties
+     echo "storePassword=${{ secrets.KEYSTORE_PASSWORD }}" >> android/gradle.properties
+     echo "keyAlias=${{ secrets.KEY_ALIAS }}" >> android/gradle.properties
+     echo "keyPassword=${{ secrets.KEY_PASSWORD }}" >> android/gradle.properties
+    # Эти команды создадут файл keystore и добавят данные для подписи в gradle.properties
+    # ПОКА ЧТО МОЖЕШЬ ЗАКОММЕНТИРОВАТЬ ЭТОТ БЛОК, ЕСЛИ ЕЩЕ НЕТ SECRETS.
+    # Это нужно для подписи релиза, без подписи релизный APK не будет установлен.
+
+   - name: Build Android Release AAB
+    run: cd android && ./gradlew bundleRelease # Собираем .aab (Android App Bundle)
+
+   - name: Upload Android AAB
+    uses: actions/upload-artifact@v4
+    with:
+     name: android-release-aab
+     path: android/app/build/outputs/bundle/release/app-release.aab
+     retention-days: 7
+
