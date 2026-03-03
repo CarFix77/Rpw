@@ -1,0 +1,23 @@
+
+{
+ "name": "aether-vpn-app",
+ "version": "1.0.0",
+ "description": "Cross-platform VPN application with Capacitor",
+ "main": "index.html",
+ "scripts": {
+  "start": "npx @capacitor/cli serve",
+  "build": "npm run build:web && npm run build:android && npm run build:ios",
+  "build:web": "echo 'No dedicated web build step, index.html is the web build.'",
+  "build:android": "npx @capacitor/cli sync android && npx @capacitor/cli build android --release",
+  "build:ios": "npx @capacitor/cli sync ios && npx @capacitor/cli build ios --release"
+ },
+ "dependencies": {
+  "@capacitor/core": "^5.7.4",
+  "@capacitor/android": "^5.7.4",
+  "@capacitor/ios": "^5.7.4"
+ },
+ "devDependencies": {
+  "@capacitor/cli": "^5.7.4"
+ }
+}
+
